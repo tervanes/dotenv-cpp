@@ -1,0 +1,10 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -7,6 +7,4 @@
+ option(BUILD_DOCS "Build documentation" ON)
+ option(BUILD_TESTS "Build tests cases" OFF)
+ 
+-set(CMAKE_CXX_FLAGS_DEBUG "-g --coverage -fdump-ipa-inline")
+-
+ if(BUILD_DOCS)
