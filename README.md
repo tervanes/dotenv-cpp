@@ -1,177 +1,110 @@
 # dotenv-cpp
 
-## Installation
+vcpkg packaging for [`laserpants/dotenv-cpp`](https://github.com/laserpants/dotenv-cpp), a header-only C++ library for loading environment variables from `.env` files.
 
-The library is header-only, so there is nothing to build. You could simply merge the `include` directory into your project root, entering something like 
+This repository maintains the vcpkg port and version metadata. The bundled library source, API, and upstream license originate from the upstream `laserpants/dotenv-cpp` project.
 
-```bash
-mkdir -p include
-cp -rn <path-to-this-repo>/dotenv-cpp/include/ .
+## Package information
+
+- **Package:** `dotenv-cpp`
+- **Version:** `0.9.3`
+- **License:** BSD 3-Clause
+- **Upstream project:** [`laserpants/dotenv-cpp`](https://github.com/laserpants/dotenv-cpp)
+
+## Installation with vcpkg
+
+This repository is structured as a vcpkg registry. Add it to the consuming project's `vcpkg-configuration.json`:
+
+```json
+{
+  "registries": [
+    {
+      "kind": "git",
+      "repository": "https://github.com/tervanes/dotenv-cpp.git",
+      "baseline": "<registry-commit>",
+      "packages": [
+        "dotenv-cpp"
+      ]
+    }
+  ]
+}
 ```
 
-and compile, adding `-I include/laserpants/dotenv` to your build command, which then allows you to `#include "dotenv.h"`.
+Replace `<registry-commit>` with the commit that should be used as the registry baseline. Pinning a commit keeps dependency resolution reproducible.
 
-Although the above method is sufficient for many use cases; for proper CMake support, you should install the library using a sequence of command such as
+Declare the dependency in the consuming project's `vcpkg.json`:
 
-```bash
-cd <path-to-this-repo>
-mkdir -p build
-cd build
-cmake ..
-make
-sudo make install
+```json
+{
+  "dependencies": [
+    "dotenv-cpp"
+  ]
+}
 ```
 
-By default, the headers will then be installed to `include/laserpants/dotenv-<VERSION>/`, relative to the CMake install prefix (`/usr/local/` on Linux/Unix). To compile *without* CMake, you can then use a flag
+Then install the package:
 
+```sh
+vcpkg install dotenv-cpp
 ```
--I /usr/local/include/laserpants/dotenv-<VERSION>
+
+The port name is `dotenv-cpp`. Use `dotenv-cpp` rather than `dotenv` when installing this registry entry.
+
+If you are maintaining a local vcpkg checkout instead of consuming the port through a registry, `vcpkg add port dotenv-cpp` creates a port skeleton in that checkout. It does not install the package; use `vcpkg install dotenv-cpp` after the port is available.
+
+Use the installed package from a CMake project by providing the vcpkg toolchain file:
+
+```sh
+cmake -B build \
+  -S . \
+  -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+cmake --build build
 ```
 
-or the equivalent path on other platforms. 
+The exact toolchain-file path and command-line syntax may vary by platform. See the [vcpkg documentation](https://learn.microsoft.com/vcpkg/get_started/get-started) for setup instructions.
 
-For CMake-based projects, your project's `CMakeLists.txt` file could look something like the following:
+Add the package to the consuming project's `CMakeLists.txt`:
 
 ```cmake
-cmake_minimum_required(VERSION 3.2)
-project(test)
+find_package(laserpants_dotenv CONFIG REQUIRED)
 
-find_package(laserpants_dotenv)
-
-add_executable(example example.cpp)
-target_link_libraries(example laserpants::dotenv)
+add_executable(example main.cpp)
+target_link_libraries(example PRIVATE laserpants::dotenv)
 ```
 
-Then, in `example.cpp`, just
+## Port layout
 
-```cpp
-#include <dotenv.h>
+The packaging files are organized as follows:
+
+```text
+ports/dotenv-cpp/
+├── patches/01.patch
+├── portfile.cmake
+└── vcpkg.json
+versions/
+├── baseline.json
+└── d-/dotenv-cpp.json
 ```
 
-## Usage
+- `vcpkg.json` declares the package metadata and host build dependencies.
+- `portfile.cmake` fetches and installs the upstream source through CMake.
+- `patches/01.patch` applies the packaging-specific adjustment required by the port.
+- `versions/` registers the package version and baseline for vcpkg.
 
-### Example
+## Licensing and attribution
 
-Given a file `.env`
+The upstream library remains licensed under the BSD 3-Clause License and retains its original copyright notice. See [`LICENSES/UPSTREAM-BSD-3-Clause.txt`](LICENSES/UPSTREAM-BSD-3-Clause.txt).
 
-```shell
-DATABASE_HOST=localhost
-DATABASE_USERNAME=user
-DATABASE_PASSWORD="antipasto"
-```
+Packaging and repository contributions are covered by the root [`LICENSE`](LICENSE). See [`LICENSES/README.md`](LICENSES/README.md) for the repository's attribution details.
 
-and a program `example.cpp`
+## Contributing
 
-```cpp
-// example.cpp
-#include <iostream>
-#include <dotenv.h>
+Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) before submitting changes.
 
-int main()
-{
-    dotenv::init();
+## Security
 
-    std::cout << std::getenv("DATABASE_USERNAME") << std::endl;
-    std::cout << std::getenv("DATABASE_PASSWORD") << std::endl;
+Please read [`SECURITY.md`](SECURITY.md) before reporting a vulnerability.
 
-    return 0;
-}
-```
+## Code of conduct
 
-the output is:
-
-```
-user
-antipasto
-```
-
-### Default values
-
-`dotenv::getenv()` is a wrapper for `std::getenv()` that also takes a default value, in case the variable is empty:
-
-```cpp
-std::cout << dotenv::getenv("DATABASE_USERNAME", "anonymous") << std::endl;
-```
-
-### Referencing other variables
-
-Other variables can be referenced using either `${VARIABLE}` or `$VARIABLE`.
-
-#### Example: 
-
-Given this program
-
-```cpp
-#include <iostream>
-#include <string>
-#include "dotenv.h"
-
-int main(int argc, char **argv)
-{
-   dotenv::init("resolve.env");
-   std::cout << std::getenv("MESSAGE") << std::endl;
-   return 0;
-}
-```
-
-and this `resolve.env`
-
-```
-TEMPERATURE = cold
-EXTENT      =    "  long  "
-SEASON      = '$EXTENT $TEMPERATURE winter'
-MORE        =    and $TEMPERATURE ice
-CONTAINS    = lots of ${TEMPERATURE} snow $MORE
-MESSAGE     =    I wish you a ${SEASON}, with $CONTAINS
-```
-
-the output becomes
-
-```
-I wish you a   long   cold winter, with lots of cold snow and cold ice
-```
-
-### Options
-
-By default, if a name is already present in the environment, `dotenv::init()` will replace it with the new value. To preserve existing variables, you must pass the `Preserve` flag.
-
-```cpp
-dotenv::init(dotenv::Preserve);
-
-std::cout << std::getenv("DATABASE_USERNAME") << std::endl;
-std::cout << std::getenv("DATABASE_PASSWORD") << std::endl;
-```
-
-Updating the previous example, recompiling and running the program again, after setting the `DATABASE_USERNAME` variable, e.g. as
-
-```
-DATABASE_USERNAME=root ./example
-```
-
-the output this time is:
-
-```
-root
-antipasto
-```
-
-## Changelog
-
-### 0.9.3
-
-#### Added
-- Add cctype header needed by std::isspace
-
-### 0.9.2
-
-#### Added
-- Add support for referencing other variables in variable definitions
-
-### 0.9.1
-
-#### Added
-- Add wrapper for setenv to support MSVC
-
-### 0.9.0
-
-- Initial version
+Participation in this project is governed by [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
