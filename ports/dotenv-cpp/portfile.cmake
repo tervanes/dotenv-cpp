@@ -27,19 +27,26 @@ vcpkg_cmake_config_fixup(
     CONFIG_PATH lib/cmake/laserpants_dotenv
 )
 
-set(UPSTREAM_LICENSE_FILE
-    "${CURRENT_BUILDTREES_DIR}/upstream-BSD-3-Clause.txt")
+set(UPSTREAM_LICENSE_FILE "${CURRENT_BUILDTREES_DIR}/upstream-BSD-3-Clause.txt")
+
+configure_file(
+    "${SOURCE_PATH}/LICENSES/UPSTREAM-BSD-3-Clause.txt"
+    "${UPSTREAM_LICENSE_FILE}"
+    COPYONLY
+)
+
+set(ORIGIN_LICENSE_FILE "${CURRENT_BUILDTREES_DIR}/origin-BSD-3-Clause.txt")
 
 configure_file(
     "${SOURCE_PATH}/LICENSE"
-    "${UPSTREAM_LICENSE_FILE}"
+    "${ORIGIN_LICENSE_FILE}"
     COPYONLY
 )
 
 vcpkg_install_copyright(
     FILE_LIST
         "${UPSTREAM_LICENSE_FILE}"
-        "${CMAKE_CURRENT_LIST_DIR}/../../LICENSE"
+        "${ORIGIN_LICENSE_FILE}"
 )
 
 file(REMOVE_RECURSE
